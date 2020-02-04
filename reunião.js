@@ -1,50 +1,74 @@
-var http = require('http');
-const url = require('url');
 const axios = require('axios');
 const qs = require('querystring')
-http.createServer(function (req, res) {
-    var params = url.parse(req.url, true).query;
 
-    res.writeHead(200, {
-        'Content-Type': 'text/plain'
-    });
-    if (params.code) {
-        let data = {
-            "client_id": "11393fd4-e348-4bf9-b110-6a709af54548",
-            "client_secret": "qs5MlcNHObzFF[_4RcTJ.@Mqy7CuOha1",
-            "code": params.code,
-            "redirect_uri": "http://localhost:8080",
-            "grant_type": "authorization_code",
-            "scope" : "Calendars.ReadWrite"
-        };
-        console.log('passou ' + JSON.stringify(data));
-        res.write('your code is : ' + params.code);
-        axios.post('https://login.microsoftonline.com/3835863a-ce23-4ec5-bb68-eee13552e3b1/oauth2/v2.0/token', qs.stringify(data), {
+let user = {
+    "client_id": "11393fd4-e348-4bf9-b110-6a709af54548",
+    "client_secret": "qs5MlcNHObzFF[_4RcTJ.@Mqy7CuOha1",
+    "grant_type": "client_credentials",
+    "resource": "https://graph.microsoft.com",
+    "token_type": "Bearer",
+    "username": "vgindro@vgindro.onmicrosoft.com",
+    "password": "Wavic2516@"
+}
+
+axios.post('https://login.microsoftonline.com/3835863a-ce23-4ec5-bb68-eee13552e3b1/oauth2/token', qs.stringify(user), {
+    headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+}).then((response) => {
+    console.log(response.data.access_token);
+    var token = response.data.access_token
+    axios.get("https://graph.microsoft.com/v1.0/users/vgindro@vgindro.onmicrosoft.com/calendars", {
+        headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+    }).then((response) => {
+        let date = new Date();
+        let curr_hour = date.getHours();
+        let curr_min = date.getMinutes();
+
+        
+        let calendario = response.data.value[3];  //id do calendário da bcic
+
+
+        axios.get("https://graph.microsoft.com/v1.0/users/vgindro@vgindro.onmicrosoft.com/calendars/" + calendario.id + "/events", {
             headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
+                Authorization: "Bearer " + token,
+                "Content-Type": "application/x-www-form-urlencoded",
             }
         }).then((response) => {
-            console.log(response.data.access_token);
-            axios.get("https://graph.microsoft.com/v1.0/me/events", {
-                headers: {
-                    Authorization : "Bearer " + response.data.access_token,
-                    "Content-Type": "application/x-www-form-urlencoded",
-                }
-            }).then((response) => {
-                console.log(response.data.value[0]);
-                let eventos = response.data.value;
-                for (i=0;i<eventos.length;i++){
-                    
-                    if(eventos[i].start.substring(11,19)){
-
+            let eventos = response.data.value;
+            axios.get("http://10.97.43.41:8080/bcic").then((response) => {
+                let pessoas = response.data.people
+                for (i = 0; i < eventos.length; i++) {
+                    eventos[i].startHour = eventos[i].start.dateTime.substring(11, 13);
+                    eventos[i].day = eventos[i].start.toLocaleString().substring(8, 9)
+                    eventos[i].startMin = eventos[i].start.dateTime.substring(14, 16);
+                    if (eventos.length > 0) {
+                        if (eventos[i].startHour < curr_hour || eventos[i].startMin < curr_min && (pessoas != undefined || pessoas <= 2)) {
+                            axios.delete("https://graph.microsoft.com/v1.0/users/vgindro@vgindro.onmicrosoft.com/calendars/" + calendario.id + "/events/" + eventos[i].id, {
+                                headers: {
+                                    Authorization: "Bearer " + token,
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                }
+                            }).then((response) => {
+                                console.log(response.data);
+                            }).catch((e) => {
+                                console.log(e)
+                            });
+                        }
                     }
                 }
-            }).catch(console.log);
+            }).catch((e) => {
+                console.log(e);
+            });
         }).catch((e) => {
             console.log(e);
         });
-    } else {
-        res.write('Oi krl');
-    }
-    res.end();
-}).listen(8080);
+    }).catch((e) => {
+        console.log(e);
+    });
+}).catch((e) => {
+    console.log(e)
+});
