@@ -1,7 +1,7 @@
 const axios = require('axios');
 const qs = require('querystring')
 
-let user = {
+const user = {
     "client_id": "11393fd4-e348-4bf9-b110-6a709af54548",
     "client_secret": "qs5MlcNHObzFF[_4RcTJ.@Mqy7CuOha1",
     "grant_type": "client_credentials",
@@ -11,7 +11,22 @@ let user = {
     "password": "Wavic2516@"
 }
 
-axios.post('https://login.microsoftonline.com/3835863a-ce23-4ec5-bb68-eee13552e3b1/oauth2/token', qs.stringify(user), {
+function hourToSeconds(str) {
+    var p = str.split(':'),
+        s = 0, m = 1;
+
+    while (p.length > 0) {
+        s += m * parseInt(p.pop(), 10);
+        m *= 60;
+    }
+
+    return s;
+}
+
+
+setInterval(() => {
+    
+    axios.post('https://login.microsoftonline.com/3835863a-ce23-4ec5-bb68-eee13552e3b1/oauth2/token', qs.stringify(user), {
     headers: {
         "Content-Type": "application/x-www-form-urlencoded"
     }
@@ -25,8 +40,7 @@ axios.post('https://login.microsoftonline.com/3835863a-ce23-4ec5-bb68-eee13552e3
         }
     }).then((response) => {
         let date = new Date();
-        let curr_hour = date.getHours();
-        let curr_min = date.getMinutes();
+        let hourInSecods = hourToSeconds(date.toTimeString());
 
         
         let calendario = response.data.value[3];  //id do calendário da bcic
@@ -72,3 +86,6 @@ axios.post('https://login.microsoftonline.com/3835863a-ce23-4ec5-bb68-eee13552e3
 }).catch((e) => {
     console.log(e)
 });
+
+}, 300000);
+
