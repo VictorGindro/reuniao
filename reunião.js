@@ -1,14 +1,6 @@
 const axios = require('axios');
 const qs = require('querystring')
-const user = {
-    "client_id": "11393fd4-e348-4bf9-b110-6a709af54548",
-    "client_secret": "qs5MlcNHObzFF[_4RcTJ.@Mqy7CuOha1",
-    "grant_type": "client_credentials",
-    "resource": "https://graph.microsoft.com",
-    "token_type": "Bearer",
-    "username": "vgindro@vgindro.onmicrosoft.com",
-    "password": "Wavic2516@"
-}
+const user = {}
 
 setInterval(() => {
     axios.post('https://login.microsoftonline.com/3835863a-ce23-4ec5-bb68-eee13552e3b1/oauth2/token', qs.stringify(user), {
